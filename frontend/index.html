@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataForge AI - Full Stack</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --surface2: #18181f; --surface3: #1e1e28;
+    --border: rgba(120,120,200,0.12); --border2: rgba(120,120,200,0.22);
+    --accent: #6c63ff; --accent2: #a78bfa; --accent3: #38bdf8;
+    --green: #34d399; --amber: #fbbf24; --red: #f87171;
+    --text: #e8e8f0; --text2: #9090b0;
+    --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
+    --radius: 10px; --radius2: 16px;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* HEADER */
+  .header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:100; gap:10px; flex-wrap:wrap; }
+  .logo { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:14px; font-weight:700; color:var(--accent2); flex-shrink:0; }
+  .logo-icon { width:26px; height:26px; background:linear-gradient(135deg,var(--accent),var(--accent3)); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; }
+
+  .header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .status-badge { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text2); background:var(--surface2); border:1px solid var(--border); padding:4px 9px; border-radius:20px; font-family:var(--mono); }
+  .status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .btn-export { display:flex; align-items:center; gap:5px; padding:7px 14px; background:linear-gradient(135deg,var(--accent),#8b5cf6); border:none; border-radius:var(--radius); color:white; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--sans); opacity:0.4; pointer-events:none; text-decoration:none}
+  .btn-export.active { opacity:1; pointer-events:all; }
+  .btn-export:hover { filter:brightness(1.1); transform:translateY(-1px); }
+
+  /* LAYOUT */
+  .app-layout { display:grid; grid-template-columns:290px 1fr; height:calc(100vh - 57px); min-height:560px; }
+  .left-panel { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; background:var(--surface); }
+  .main-area { display:flex; flex-direction:column; overflow:hidden; }
+
+  /* UPLOAD */
+  .upload-section { padding:14px; border-bottom:1px solid var(--border); }
+  .section-label { font-size:9px; font-weight:700; letter-spacing:1.5px; color:var(--text2); text-transform:uppercase; margin-bottom:8px; font-family:var(--mono); }
+  .upload-zone { border:1.5px dashed var(--border2); border-radius:var(--radius2); padding:18px 14px; text-align:center; cursor:pointer; transition:all 0.25s; background:var(--surface2); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color:var(--accent); background:var(--surface3); }
+  .upload-icon { font-size:26px; margin-bottom:6px; }
+  .upload-title { font-size:12px; font-weight:500; color:var(--text); margin-bottom:3px; }
+  .upload-sub { font-size:10px; color:var(--text2); }
+  #fileInput { display:none; }
+  .file-info { display:none; align-items:center; gap:8px; padding:8px 10px; background:var(--surface3); border:1px solid var(--border2); border-radius:var(--radius); margin-top:8px; }
+  .file-info.show { display:flex; animation:slideIn 0.3s ease; }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+  .file-icon-box { width:28px; height:28px; background:rgba(108,99,255,0.15); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .file-details { flex:1; min-width:0; }
+  .file-name { font-size:11px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .file-meta { font-size:9px; color:var(--text2); font-family:var(--mono); }
+  .file-remove { background:none; border:none; color:var(--text2); cursor:pointer; font-size:13px; transition:color 0.2s; }
+  .file-remove:hover { color:var(--red); }
+
+  /* RECS */
+  .ai-section { flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+  .empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; color:var(--text2); gap:6px; }
+  .empty-state-icon { font-size:32px; opacity:0.35; }
+  .empty-state-text { font-size:11px; line-height:1.5; }
+  .rec-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:10px; cursor:pointer; transition:all 0.2s; animation:slideIn 0.3s ease both; position:relative; overflow:hidden; }
+  .rec-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+  .rec-card.severity-high::before { background:var(--red); }
+  .rec-card.severity-medium::before { background:var(--amber); }
+  .rec-card.severity-low::before { background:var(--green); }
+  .rec-card:hover { border-color:var(--border2); transform:translateX(2px); background:var(--surface3); }
+  .rec-card.applied { opacity:0.5; }
+  .rec-card.applied::before { background:var(--green); }
+  .rec-header { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .rec-icon { font-size:13px; }
+  .rec-title { font-size:11px; font-weight:600; color:var(--text); flex:1; }
+  .rec-badge { font-size:8px; font-weight:700; text-transform:uppercase; padding:2px 5px; border-radius:4px; font-family:var(--mono); }
+  .rec-desc { font-size:10px; color:var(--text2); line-height:1.4; margin-bottom:7px; }
+  .rec-apply-btn { font-size:10px; padding:5px 10px; background:rgba(108,99,255,0.12); border:1px solid rgba(108,99,255,0.3); color:var(--accent2); border-radius:6px; cursor:pointer; font-family:var(--sans); font-weight:500; transition:all 0.2s; width:100%; }
+  .rec-apply-btn:hover { background:rgba(108,99,255,0.22); }
+  .analyse-btn { margin:0 14px 14px; padding:9px; background:linear-gradient(135deg,var(--accent),var(--accent3)); border:none; border-radius:var(--radius); color:white; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--sans); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .analyse-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* TABLE */
+  .preview-area { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+  .preview-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--surface); gap:10px; flex-wrap:wrap; }
+  .preview-title { font-size:12px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; }
+  .preview-stats { display:flex; gap:8px; flex-wrap:wrap; }
+  .stat-pill { font-size:10px; font-family:var(--mono); color:var(--text2); background:var(--surface2); border:1px solid var(--border); padding:3px 7px; border-radius:20px; white-space:nowrap; }
+  .stat-pill span { color:var(--accent2); }
+  .table-wrapper { flex:1; overflow:auto; padding:14px 18px; }
+  .table-wrapper::-webkit-scrollbar { width:5px; height:5px; }
+  .table-wrapper::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
+  .data-table { width:100%; border-collapse:collapse; font-size:11px; font-family:var(--mono); }
+  .data-table th { padding:7px 10px; text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:0.7px; color:var(--text2); background:var(--surface2); border-bottom:1px solid var(--border2); white-space:nowrap; position:sticky; top:0; z-index:1; font-weight:700; }
+  .data-table td { padding:6px 10px; border-bottom:1px solid var(--border); color:var(--text); white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; transition:background 0.15s; }
+  .data-table tr:hover td { background:var(--surface2); }
+  .empty-table { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text2); gap:10px; text-align:center; }
+  .empty-table-icon { font-size:42px; opacity:0.25; }
+  .null-val { color:rgba(248,113,113,0.7) !important; font-style:italic; font-size:9px; }
+
+  /* CHAT */
+  .chat-area { border-top:1px solid var(--border); background:var(--surface); padding:10px 18px; display:flex; flex-direction:column; gap:7px; }
+  .suggestion-chips { display:flex; gap:5px; flex-wrap:wrap; }
+  .chip { font-size:10px; padding:4px 9px; background:var(--surface2); border:1px solid var(--border2); color:var(--text2); border-radius:20px; cursor:pointer; transition:all 0.2s; font-family:var(--sans); white-space:nowrap; }
+  .chip:hover { border-color:var(--accent); color:var(--accent2); background:rgba(108,99,255,0.08); }
+  .chat-history { max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; padding-bottom:3px; }
+  .chat-msg { font-size:11px; padding:7px 11px; border-radius:10px; max-width:92%; line-height:1.5; animation:fadeUp 0.3s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .chat-msg.user { background:rgba(108,99,255,0.15); border:1px solid rgba(108,99,255,0.25); align-self:flex-end; color:var(--text); }
+  .chat-msg.ai { background:var(--surface2); border:1px solid var(--border); align-self:flex-start; color:var(--text); }
+  .chat-input-row { display:flex; gap:7px; align-items:flex-end; }
+  .chat-input { flex:1; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text); font-size:12px; font-family:var(--sans); padding:9px 12px; resize:none; min-height:38px; max-height:90px; outline:none; }
+  .send-btn { width:38px; height:38px; background:linear-gradient(135deg,var(--accent),#8b5cf6); border:none; border-radius:var(--radius); color:white; font-size:15px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    DataForge<span style="color:var(--accent3)">.ai</span> (Full Stack)
+  </div>
+  <div class="header-right">
+    <div class="status-badge"><div class="status-dot" id="statusDot"></div><span id="statusText">Ready</span></div>
+    <a class="btn-export" id="exportBtn" target="_blank" href="#">↓ Export CSV</a>
+  </div>
+</div>
+
+<div class="app-layout">
+  <div class="left-panel">
+    <div class="upload-section">
+      <div class="section-label">Data Source</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📂</div>
+        <div class="upload-title">Drop your data file</div>
+        <div class="upload-sub">CSV · XLSX · JSON</div>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json" onchange="handleFile(event)">
+      <div class="file-info" id="fileInfo">
+        <div class="file-details">
+          <div class="file-name" id="fileName">—</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:10px 14px 4px;"><div class="section-label">AI Recommendations</div></div>
+    <div class="ai-section" id="aiSection">
+      <div class="empty-state" id="emptyRecs">Upload to get recommendations</div>
+    </div>
+    <button class="analyse-btn" id="analyseBtn" disabled onclick="analyseData()">🔍 Analyse Data</button>
+  </div>
+
+  <div class="main-area">
+    <div class="preview-area">
+      <div class="preview-header">
+        <div class="preview-title">📊 Data Preview</div>
+        <div class="preview-stats" id="previewStats"></div>
+      </div>
+      <div class="table-wrapper">
+        <div id="tableContainer">
+          <div class="empty-table"><div class="empty-table-icon">🗂️</div><h3>No data loaded</h3></div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-area">
+      <div class="suggestion-chips">
+        <button class="chip" onclick="useChip('remove duplicates')">Remove duplicates</button>
+        <button class="chip" onclick="useChip('fill nulls on Price with 0')">Fill nulls</button>
+        <button class="chip" onclick="useChip('trim whitespace from columns')">Trim whitespace</button>
+      </div>
+      <div class="chat-history" id="chatHistory"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" placeholder="Command to transform dataset... e.g. 'remove duplicates'"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = "";
+let activeFileId = null;
+
+function setStatus(text, color) {
+    document.getElementById('statusText').innerText = text;
+    document.getElementById('statusDot').style.background = `var(--${color})`;
+}
+
+async function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setStatus("Uploading...", "amber");
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const res = await fetch(`${API_URL}/upload`, { method: "POST", body: formData });
+        const data = await res.json();
+        
+        if (res.ok) {
+            activeFileId = data.file_id;
+            document.getElementById('fileName').innerText = data.filename;
+            document.getElementById('fileInfo').classList.add('show');
+            document.getElementById('analyseBtn').disabled = false;
+            document.getElementById('exportBtn').classList.add('active');
+            document.getElementById('exportBtn').href = `${API_URL}/export/${activeFileId}`;
+            renderPreview(data.preview);
+            addMsg('ai', `Loaded **${data.filename}**. Processing via Pandas connection successful.`);
+            setStatus("Ready", "green");
+        } else {
+            addMsg('user', `Error loading file: ${data.detail}`);
+            setStatus("Error", "red");
+        }
+    } catch(err) {
+        addMsg('user', `Server error: ${err.message}. Is backend running?`);
+        setStatus("Error", "red");
+    }
+}
+
+function renderPreview(preview) {
+    document.getElementById('previewStats').innerHTML = `
+        <div class="stat-pill"><span>${preview.rows}</span> rows</div>
+        <div class="stat-pill"><span>${preview.cols}</span> cols</div>
+        <div class="stat-pill"><span style="color:var(--amber)">${preview.nulls}</span> nulls</div>
+        <div class="stat-pill"><span style="color:var(--red)">${preview.duplicates}</span> dups</div>
+    `;
+
+    if (!preview.data || preview.data.length === 0) return;
+
+    let html = '<table class="data-table"><thead><tr>';
+    preview.columns.forEach(col => { html += `<th>${col} <span style="font-size:8px;color:gray">${preview.col_types[col]}</span></th>`; });
+    html += '</tr></thead><tbody>';
+    
+    preview.data.forEach(row => {
+        html += '<tr>';
+        preview.columns.forEach(col => {
+            const v = row[col];
+            if (v === null || v === undefined) {
+                html += `<td class="null-val">null</td>`;
+            } else {
+                html += `<td>${v}</td>`;
+            }
+        });
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('tableContainer').innerHTML = html;
+}
+
+async function analyseData() {
+    if (!activeFileId) return;
+    setStatus("Analysing...", "amber");
+    document.getElementById('aiSection').innerHTML = `<div class="empty-state">Running AI Analysis remotely...</div>`;
+    
+    try {
+        const res = await fetch(`${API_URL}/analyze/${activeFileId}`);
+        const data = await res.json();
+        
+        if (data.recommendations && data.recommendations.length > 0) {
+            let html = '';
+            data.recommendations.forEach(rec => {
+                html += `
+                <div class="rec-card">
+                  <div class="rec-header">
+                    <span>${rec.icon}</span> <span class="rec-title">${rec.title}</span>
+                  </div>
+                  <div class="rec-desc">${rec.description}</div>
+                  <button class="rec-apply-btn" onclick="useChip('${rec.action}')">Apply: ${rec.action}</button>
+                </div>`;
+            });
+            document.getElementById('aiSection').innerHTML = html;
+        } else {
+            document.getElementById('aiSection').innerHTML = `<div class="empty-state">No recommendations found or API key not set in backend.</div>`;
+        }
+    } catch(err) {
+        document.getElementById('aiSection').innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
+    }
+    setStatus("Ready", "green");
+}
+
+function useChip(cmd) { document.getElementById('chatInput').value = cmd; sendChat(); }
+
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg || !activeFileId) return;
+    
+    input.value = '';
+    addMsg('user', msg);
+    setStatus("Processing via Pandas...", "amber");
+
+    try {
+        const res = await fetch(`${API_URL}/transform`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({file_id: activeFileId, command: msg})
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            addMsg('ai', data.message);
+            renderPreview(data.preview);
+            document.getElementById('exportBtn').href = `${API_URL}/export/${activeFileId}?salt=${Date.now()}`;
+        } else {
+            addMsg('ai', `Error: ${data.detail}`);
+        }
+    } catch(err) {
+        addMsg('ai', `Failed: ${err.message}`);
+    }
+    setStatus("Ready", "green");
+}
+
+function addMsg(role, text) {
+  const h = document.getElementById('chatHistory');
+  const d = document.createElement('div');
+  d.className = `chat-msg ${role}`;
+  d.innerHTML = text;
+  h.appendChild(d);
+  h.scrollTop = h.scrollHeight;
+}
+</script>
+</body>
+</html>

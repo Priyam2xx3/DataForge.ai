@@ -1,0 +1,15 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+sqlalchemy
+psycopg2-binary
+openpyxl
+fastapi
+uvicorn
+great_expectations
+requests
+google-generativeai
+python-dotenv
+python-multipart
+pyarrow

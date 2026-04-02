@@ -1,0 +1,15 @@
+# Environments
+venv/
+env/
+.env
+__pycache__/
+*.pyc
+
+# Data
+tmp_data/
+local_data.db
+*.parquet
+
+# IDE
+.vscode/
+.idea/

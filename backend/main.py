@@ -29,7 +29,14 @@ os.makedirs("./tmp_data", exist_ok=True)
 
 @app.get("/")
 async def serve_ui():
-    return FileResponse("../frontend/index.html")
+    return FileResponse(
+        "../frontend/index.html",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 class TransformRequest(BaseModel):
     file_id: str
@@ -47,16 +54,15 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(databa
         
     try:
         if ext == 'csv':
-            df = pd.read_csv(filepath)
+            # Handle empty values during read for speed
+            df = pd.read_csv(filepath, keep_default_na=True, na_values=['', 'nan', 'NAN', 'null'])
         elif ext in ['xls', 'xlsx']:
             df = pd.read_excel(filepath)
+            df.replace({"": pd.NA}, inplace=True)
         elif ext == 'json':
             df = pd.read_json(filepath)
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format")
-            
-        # Standardize missing
-        df.replace({"": pd.NA}, inplace=True)
             
         # Save a clean parquet version for fast state loading
         parquet_path = f"./tmp_data/{file_id}.parquet"
@@ -73,7 +79,7 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(databa
         db.commit()
         db.refresh(db_file)
         
-        preview = data_engine.get_preview_stats(df)
+        preview = data_engine.get_preview_stats(df, include_expensive=False)
         return {"file_id": file_id, "filename": file.filename, "preview": preview}
         
     except Exception as e:
@@ -87,7 +93,7 @@ async def get_preview(file_id: str):
         raise HTTPException(status_code=404, detail="File not found")
         
     df = pd.read_parquet(filepath)
-    preview = data_engine.get_preview_stats(df)
+    preview = data_engine.get_preview_stats(df, include_expensive=False)
     return {"preview": preview}
 
 
@@ -99,7 +105,8 @@ async def analyze_data(file_id: str):
         
     df = pd.read_parquet(filepath)
     recommendations = data_engine.analyze_dataset(df)
-    return {"recommendations": recommendations}
+    preview = data_engine.get_preview_stats(df, include_expensive=True)
+    return {"recommendations": recommendations, "preview": preview}
 
 
 @app.post("/transform")
@@ -119,6 +126,23 @@ async def transform_data(request: TransformRequest):
     # Return updated preview
     preview = data_engine.get_preview_stats(df)
     return {"message": message, "preview": preview}
+
+
+@app.post("/chart")
+async def create_chart(request: TransformRequest):
+    """Generate a dark-themed chart image from a natural language prompt."""
+    filepath = f"./tmp_data/{request.file_id}.parquet"
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    df = pd.read_parquet(filepath)
+    result = data_engine.generate_chart(df, request.command)
+
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return result  # {"image_b64": "...", "title": "...", "description": "..."}
+
 
 @app.get("/export/{file_id}")
 async def export_data(file_id: str):

@@ -1,311 +1,1509 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DataForge AI - Full Stack</title>
+<title>DataForge AI – Intelligent Data Agent</title>
+<meta name="description" content="AI-powered data preprocessing, transformation, and analysis agent. Upload CSV, XLSX, or JSON files for instant AI-driven insights.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0a0a0f; --surface: #111118; --surface2: #18181f; --surface3: #1e1e28;
-    --border: rgba(120,120,200,0.12); --border2: rgba(120,120,200,0.22);
-    --accent: #6c63ff; --accent2: #a78bfa; --accent3: #38bdf8;
-    --green: #34d399; --amber: #fbbf24; --red: #f87171;
-    --text: #e8e8f0; --text2: #9090b0;
-    --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
-    --radius: 10px; --radius2: 16px;
-  }
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
-  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+/* ============================================================
+   CSS CUSTOM PROPERTIES – DARK & LIGHT THEMES
+   ============================================================ */
+:root {
+  /* Typography */
+  --font-sans: 'Nunito Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-  /* HEADER */
-  .header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:100; gap:10px; flex-wrap:wrap; }
-  .logo { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:14px; font-weight:700; color:var(--accent2); flex-shrink:0; }
-  .logo-icon { width:26px; height:26px; background:linear-gradient(135deg,var(--accent),var(--accent3)); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  /* Transitions */
+  --t-fast: 0.15s ease;
+  --t-med: 0.25s ease;
+  --t-slow: 0.4s cubic-bezier(0.34,1.56,0.64,1);
 
-  .header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-  .status-badge { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text2); background:var(--surface2); border:1px solid var(--border); padding:4px 9px; border-radius:20px; font-family:var(--mono); }
-  .status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .btn-export { display:flex; align-items:center; gap:5px; padding:7px 14px; background:linear-gradient(135deg,var(--accent),#8b5cf6); border:none; border-radius:var(--radius); color:white; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--sans); opacity:0.4; pointer-events:none; text-decoration:none}
-  .btn-export.active { opacity:1; pointer-events:all; }
-  .btn-export:hover { filter:brightness(1.1); transform:translateY(-1px); }
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-full: 9999px;
+}
 
-  /* LAYOUT */
-  .app-layout { display:grid; grid-template-columns:290px 1fr; height:calc(100vh - 57px); min-height:560px; }
-  .left-panel { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; background:var(--surface); }
-  .main-area { display:flex; flex-direction:column; overflow:hidden; }
+/* Dark theme (default) */
+[data-theme="dark"] {
+  --bg-base:       #0f0f12;
+  --bg-surface:    #14141a;
+  --bg-card:       #1a1a22;
+  --bg-card2:      #1e1e27;
+  --bg-hover:      #252530;
+  --bg-input:      #14141a;
 
-  /* UPLOAD */
-  .upload-section { padding:14px; border-bottom:1px solid var(--border); }
-  .section-label { font-size:9px; font-weight:700; letter-spacing:1.5px; color:var(--text2); text-transform:uppercase; margin-bottom:8px; font-family:var(--mono); }
-  .upload-zone { border:1.5px dashed var(--border2); border-radius:var(--radius2); padding:18px 14px; text-align:center; cursor:pointer; transition:all 0.25s; background:var(--surface2); }
-  .upload-zone:hover, .upload-zone.drag-over { border-color:var(--accent); background:var(--surface3); }
-  .upload-icon { font-size:26px; margin-bottom:6px; }
-  .upload-title { font-size:12px; font-weight:500; color:var(--text); margin-bottom:3px; }
-  .upload-sub { font-size:10px; color:var(--text2); }
-  #fileInput { display:none; }
-  .file-info { display:none; align-items:center; gap:8px; padding:8px 10px; background:var(--surface3); border:1px solid var(--border2); border-radius:var(--radius); margin-top:8px; }
-  .file-info.show { display:flex; animation:slideIn 0.3s ease; }
-  @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-  .file-icon-box { width:28px; height:28px; background:rgba(108,99,255,0.15); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
-  .file-details { flex:1; min-width:0; }
-  .file-name { font-size:11px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .file-meta { font-size:9px; color:var(--text2); font-family:var(--mono); }
-  .file-remove { background:none; border:none; color:var(--text2); cursor:pointer; font-size:13px; transition:color 0.2s; }
-  .file-remove:hover { color:var(--red); }
+  --border:        rgba(255,110,30,0.08);
+  --border2:       rgba(255,110,30,0.15);
+  --border-accent: rgba(255,110,30,0.45);
 
-  /* RECS */
-  .ai-section { flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
-  .empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; color:var(--text2); gap:6px; }
-  .empty-state-icon { font-size:32px; opacity:0.35; }
-  .empty-state-text { font-size:11px; line-height:1.5; }
-  .rec-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:10px; cursor:pointer; transition:all 0.2s; animation:slideIn 0.3s ease both; position:relative; overflow:hidden; }
-  .rec-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
-  .rec-card.severity-high::before { background:var(--red); }
-  .rec-card.severity-medium::before { background:var(--amber); }
-  .rec-card.severity-low::before { background:var(--green); }
-  .rec-card:hover { border-color:var(--border2); transform:translateX(2px); background:var(--surface3); }
-  .rec-card.applied { opacity:0.5; }
-  .rec-card.applied::before { background:var(--green); }
-  .rec-header { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
-  .rec-icon { font-size:13px; }
-  .rec-title { font-size:11px; font-weight:600; color:var(--text); flex:1; }
-  .rec-badge { font-size:8px; font-weight:700; text-transform:uppercase; padding:2px 5px; border-radius:4px; font-family:var(--mono); }
-  .rec-desc { font-size:10px; color:var(--text2); line-height:1.4; margin-bottom:7px; }
-  .rec-apply-btn { font-size:10px; padding:5px 10px; background:rgba(108,99,255,0.12); border:1px solid rgba(108,99,255,0.3); color:var(--accent2); border-radius:6px; cursor:pointer; font-family:var(--sans); font-weight:500; transition:all 0.2s; width:100%; }
-  .rec-apply-btn:hover { background:rgba(108,99,255,0.22); }
-  .analyse-btn { margin:0 14px 14px; padding:9px; background:linear-gradient(135deg,var(--accent),var(--accent3)); border:none; border-radius:var(--radius); color:white; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--sans); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; }
-  .analyse-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  --accent-pri:    #f97316;
+  --accent-glow:   rgba(249,115,22,0.15);
+  --accent-sec:    #fbbf24;
+  --accent-cyan:   #fb923c;
+  --accent-green:  #22c55e;
+  --accent-amber:  #fbbf24;
+  --accent-red:    #ef4444;
+  --accent-orange: #f97316;
 
-  /* TABLE */
-  .preview-area { flex:1; overflow:hidden; display:flex; flex-direction:column; }
-  .preview-header { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--surface); gap:10px; flex-wrap:wrap; }
-  .preview-title { font-size:12px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; }
-  .preview-stats { display:flex; gap:8px; flex-wrap:wrap; }
-  .stat-pill { font-size:10px; font-family:var(--mono); color:var(--text2); background:var(--surface2); border:1px solid var(--border); padding:3px 7px; border-radius:20px; white-space:nowrap; }
-  .stat-pill span { color:var(--accent2); }
-  .table-wrapper { flex:1; overflow:auto; padding:14px 18px; }
-  .table-wrapper::-webkit-scrollbar { width:5px; height:5px; }
-  .table-wrapper::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
-  .data-table { width:100%; border-collapse:collapse; font-size:11px; font-family:var(--mono); }
-  .data-table th { padding:7px 10px; text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:0.7px; color:var(--text2); background:var(--surface2); border-bottom:1px solid var(--border2); white-space:nowrap; position:sticky; top:0; z-index:1; font-weight:700; }
-  .data-table td { padding:6px 10px; border-bottom:1px solid var(--border); color:var(--text); white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; transition:background 0.15s; }
-  .data-table tr:hover td { background:var(--surface2); }
-  .empty-table { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text2); gap:10px; text-align:center; }
-  .empty-table-icon { font-size:42px; opacity:0.25; }
-  .null-val { color:rgba(248,113,113,0.7) !important; font-style:italic; font-size:9px; }
+  --text-pri:      #ede8e0;
+  --text-sec:      #9a9080;
+  --text-dim:      #4a4540;
 
-  /* CHAT */
-  .chat-area { border-top:1px solid var(--border); background:var(--surface); padding:10px 18px; display:flex; flex-direction:column; gap:7px; }
-  .suggestion-chips { display:flex; gap:5px; flex-wrap:wrap; }
-  .chip { font-size:10px; padding:4px 9px; background:var(--surface2); border:1px solid var(--border2); color:var(--text2); border-radius:20px; cursor:pointer; transition:all 0.2s; font-family:var(--sans); white-space:nowrap; }
-  .chip:hover { border-color:var(--accent); color:var(--accent2); background:rgba(108,99,255,0.08); }
-  .chat-history { max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:5px; padding-bottom:3px; }
-  .chat-msg { font-size:11px; padding:7px 11px; border-radius:10px; max-width:92%; line-height:1.5; animation:fadeUp 0.3s ease; }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-  .chat-msg.user { background:rgba(108,99,255,0.15); border:1px solid rgba(108,99,255,0.25); align-self:flex-end; color:var(--text); }
-  .chat-msg.ai { background:var(--surface2); border:1px solid var(--border); align-self:flex-start; color:var(--text); }
-  .chat-input-row { display:flex; gap:7px; align-items:flex-end; }
-  .chat-input { flex:1; background:var(--surface2); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text); font-size:12px; font-family:var(--sans); padding:9px 12px; resize:none; min-height:38px; max-height:90px; outline:none; }
-  .send-btn { width:38px; height:38px; background:linear-gradient(135deg,var(--accent),#8b5cf6); border:none; border-radius:var(--radius); color:white; font-size:15px; cursor:pointer; }
+  --gradient-hero: linear-gradient(135deg, #16140f 0%, #0f0f12 50%, #141210 100%);
+  --gradient-acc:  linear-gradient(135deg, #f97316, #ef4444);
+  --gradient-gold: linear-gradient(135deg, #fbbf24, #f97316);
+  --gradient-pro:  linear-gradient(180deg, #14141a 0%, #0f0f12 100%);
+
+  --shadow-card:   0 4px 24px rgba(0,0,0,0.6);
+  --shadow-glow:   0 0 30px rgba(249,115,22,0.12);
+  --shadow-btn:    0 4px 15px rgba(249,115,22,0.3);
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --bg-base:       #f0f4fc;
+  --bg-surface:    #ffffff;
+  --bg-card:       #ffffff;
+  --bg-card2:      #f6f8ff;
+  --bg-hover:      #eef2ff;
+  --bg-input:      #f6f8ff;
+
+  --border:        rgba(60,90,200,0.1);
+  --border2:       rgba(60,90,200,0.18);
+  --border-accent: rgba(60,90,200,0.4);
+
+  --accent-pri:    #3b70e8;
+  --accent-glow:   rgba(59,112,232,0.15);
+  --accent-sec:    #7c3aed;
+  --accent-cyan:   #0891b2;
+  --accent-green:  #059669;
+  --accent-amber:  #d97706;
+  --accent-red:    #e11d48;
+  --accent-orange: #ea580c;
+
+  --text-pri:      #1a2340;
+  --text-sec:      #5568a0;
+  --text-dim:      #9aabcc;
+
+  --gradient-hero: linear-gradient(135deg, #dde8ff 0%, #f0f4fc 50%, #e8eeff 100%);
+  --gradient-acc:  linear-gradient(135deg, #3b70e8, #7c3aed);
+  --gradient-gold: linear-gradient(135deg, #ea580c, #d97706);
+  --gradient-pro:  linear-gradient(180deg, #ffffff 0%, #f0f4fc 100%);
+
+  --shadow-card:   0 4px 24px rgba(60,90,200,0.08);
+  --shadow-glow:   0 0 30px rgba(59,112,232,0.08);
+  --shadow-btn:    0 4px 15px rgba(59,112,232,0.25);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-pri);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background var(--t-med), color var(--t-med);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: var(--r-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-accent); }
+
+/* ============================================================
+   HEADER / NAVBAR
+   ============================================================ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  gap: 16px;
+  box-shadow: var(--shadow-card);
+  transition: background var(--t-med), border-color var(--t-med);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-pri);
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  background: var(--gradient-acc);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: var(--shadow-btn);
+  flex-shrink: 0;
+}
+
+.logo-text { color: var(--text-pri); font-family: var(--font-sans); font-weight: 800; font-size: 17px; letter-spacing: -0.3px; }
+.logo-text em { color: var(--accent-pri); font-style: normal; }
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-pills {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  padding: 4px;
+}
+
+.nav-pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: var(--r-full);
+  border: none;
+  background: transparent;
+  color: var(--text-sec);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  font-family: var(--font-sans);
+}
+
+.nav-pill.active {
+  background: var(--gradient-acc);
+  color: #fff;
+  box-shadow: var(--shadow-btn);
+}
+
+.nav-pill.disabled { opacity: 0.6; cursor: not-allowed; position: relative; }
+.soon-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: var(--gradient-acc);
+  color: white;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(249,115,22,0.4);
+  pointer-events: none;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Status Badge */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-sec);
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: var(--r-full);
+  font-family: var(--font-mono);
+  transition: all var(--t-fast);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--accent-green);
+}
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+.status-dot.pulsing { animation: pulse 1.2s infinite; }
+
+/* Theme Toggle */
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border2);
+  background: var(--bg-card2);
+  color: var(--text-sec);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all var(--t-fast);
+}
+.theme-toggle:hover {
+  border-color: var(--border-accent);
+  color: var(--accent-pri);
+  background: var(--bg-hover);
+  transform: rotate(15deg);
+}
+
+/* Export Button */
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: var(--gradient-acc);
+  border: none;
+  border-radius: var(--r-md);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-med);
+  font-family: var(--font-sans);
+  text-decoration: none;
+  opacity: 0.35;
+  pointer-events: none;
+  box-shadow: var(--shadow-btn);
+}
+.btn-export.enabled { opacity: 1; pointer-events: all; }
+.btn-export:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+
+/* ============================================================
+   APP LAYOUT
+   ============================================================ */
+.app-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: calc(100vh - 60px);
+}
+
+/* ============================================================
+   LEFT SIDEBAR / PANEL
+   ============================================================ */
+.left-panel {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  transition: background var(--t-med);
+}
+
+/* Section Labels */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  margin-bottom: 10px;
+}
+
+/* ---- Upload Zone ---- */
+.upload-section { padding: 16px; border-bottom: 1px solid var(--border); }
+
+.upload-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--r-lg);
+  padding: 22px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--t-med);
+  background: var(--bg-card2);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-acc);
+  opacity: 0;
+  transition: opacity var(--t-med);
+}
+
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent-pri);
+  box-shadow: var(--shadow-glow);
+}
+
+.upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 0.04; }
+
+.upload-icon-wrap {
+  width: 52px;
+  height: 52px;
+  background: var(--gradient-acc);
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  font-size: 22px;
+  box-shadow: var(--shadow-btn);
+  position: relative;
+}
+
+.upload-title { font-size: 13px; font-weight: 600; color: var(--text-pri); margin-bottom: 4px; }
+.upload-sub { font-size: 11px; color: var(--text-sec); }
+
+#fileInput { display: none; }
+
+/* File Info strip */
+.file-strip {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-md);
+  margin-top: 10px;
+  animation: slideDown 0.3s var(--t-slow);
+}
+.file-strip.show { display: flex; }
+
+@keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+.file-strip-icon {
+  width: 32px; height: 32px;
+  background: rgba(79,142,247,0.12);
+  border: 1px solid rgba(79,142,247,0.2);
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.file-strip-info { flex: 1; min-width: 0; }
+.file-strip-name { font-size: 11px; font-weight: 500; color: var(--text-pri); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-strip-size { font-size: 9px; color: var(--text-sec); font-family: var(--font-mono); }
+.file-strip-remove { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; padding: 2px; transition: color var(--t-fast); }
+.file-strip-remove:hover { color: var(--accent-red); }
+
+/* ---- AI Recommendations ---- */
+.ai-panel { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+
+.ai-panel-header { padding: 14px 16px 6px; }
+
+.ai-recs-list { flex: 1; overflow-y: auto; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 0; scroll-behavior: smooth; }
+
+.ai-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: var(--text-dim);
+  gap: 8px;
+}
+.ai-empty-icon { font-size: 36px; opacity: 0.4; margin-bottom: 4px; }
+.ai-empty-text { font-size: 11px; line-height: 1.6; color: var(--text-sec); }
+
+/* Rec Card */
+.rec-card {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all var(--t-med);
+  position: relative;
+  overflow: hidden;
+  animation: slideDown 0.3s ease both;
+}
+.rec-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+.rec-card.severity-high::before   { background: var(--accent-red); }
+.rec-card.severity-medium::before { background: var(--accent-amber); }
+.rec-card.severity-low::before    { background: var(--accent-green); }
+
+.rec-card:hover {
+  border-color: var(--border2);
+  transform: translateX(3px);
+  box-shadow: var(--shadow-card);
+}
+.rec-card.applied { opacity: 0.5; }
+.rec-card.applied::before { background: var(--accent-green); }
+
+.rec-hd { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.rec-icon { font-size: 13px; flex-shrink: 0; }
+.rec-title { font-size: 11px; font-weight: 600; color: var(--text-pri); flex: 1; }
+.rec-severity {
+  font-size: 8px; font-weight: 700; text-transform: uppercase;
+  padding: 2px 6px; border-radius: var(--r-full);
+  font-family: var(--font-mono);
+}
+.severity-high .rec-severity   { background: rgba(244,63,94,0.12);  color: var(--accent-red); }
+.severity-medium .rec-severity { background: rgba(245,158,11,0.12); color: var(--accent-amber); }
+.severity-low .rec-severity    { background: rgba(16,185,129,0.12); color: var(--accent-green); }
+
+.rec-desc { font-size: 10px; color: var(--text-sec); line-height: 1.5; margin-bottom: 8px; }
+.rec-action-btn {
+  font-size: 10px;
+  padding: 5px 10px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(79,142,247,0.2);
+  color: var(--accent-pri);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  transition: all var(--t-fast);
+  width: 100%;
+}
+.rec-action-btn:hover { background: rgba(79,142,247,0.15); border-color: var(--accent-pri); }
+
+/* Analyse Button */
+.analyse-btn {
+  margin: 0 16px 16px;
+  padding: 11px;
+  background: var(--gradient-acc);
+  border: none;
+  border-radius: var(--r-md);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all var(--t-med);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-shadow: var(--shadow-btn);
+  position: relative;
+  overflow: hidden;
+}
+.analyse-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.08);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.analyse-btn:hover::after { opacity: 1; }
+.analyse-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(79,142,247,0.35); }
+.analyse-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+
+/* ============================================================
+   MAIN AREA
+   ============================================================ */
+.main-area {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+/* ---- Preview Header Stats ---- */
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.preview-title-wrap { display: flex; align-items: center; gap: 8px; }
+.preview-title { font-size: 13px; font-weight: 600; color: var(--text-pri); }
+.preview-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
+
+.stat-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.stat-chip {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-sec);
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  padding: 4px 9px;
+  border-radius: var(--r-full);
+  white-space: nowrap;
+}
+.stat-chip .val { color: var(--accent-pri); font-weight: 600; }
+.stat-chip .val.warn { color: var(--accent-amber); }
+.stat-chip .val.err  { color: var(--accent-red); }
+
+/* ---- Data Table ---- */
+.table-section { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+.table-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+}
+
+.data-table th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  background: var(--bg-card2);
+  border-bottom: 1px solid var(--border2);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 700;
+}
+.data-table th:last-child { border-right: none; }
+
+.col-type { color: var(--text-dim); font-size: 7.5px; margin-left: 4px; }
+
+.data-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid rgba(99,130,230,0.05);
+  color: var(--text-pri);
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background var(--t-fast);
+}
+.data-table td:last-child { border-right: none; }
+.data-table tr:hover td { background: var(--bg-card2); }
+
+.null-val { color: var(--accent-red) !important; opacity: 0.7; font-style: italic; font-size: 9px; }
+
+.table-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 40px;
+}
+
+/* Landing welcome inside main area */
+.landing-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-hero);
+  text-align: center;
+  padding: 40px 24px;
+  gap: 20px;
+}
+.landing-glyph {
+  width: 80px; height: 80px;
+  background: var(--gradient-acc);
+  border-radius: var(--r-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  box-shadow: var(--shadow-glow), var(--shadow-btn);
+}
+.landing-headline { font-size: 28px; font-weight: 700; color: var(--text-pri); line-height: 1.2; }
+.landing-sub { font-size: 14px; color: var(--text-sec); max-width: 420px; line-height: 1.6; }
+.landing-pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.landing-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 500;
+  background: var(--bg-card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-full);
+  padding: 6px 14px;
+  color: var(--text-sec);
+}
+.landing-pill span { font-size: 13px; }
+
+/* ---- Chat Bar ---- */
+.chat-bar {
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  transition: background var(--t-med);
+}
+
+.suggestion-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.s-chip {
+  font-size: 10px;
+  padding: 5px 10px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  color: var(--text-sec);
+  border-radius: var(--r-full);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+.s-chip:hover {
+  border-color: var(--accent-pri);
+  color: var(--accent-pri);
+  background: var(--accent-glow);
+}
+
+.chat-history {
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.chat-msg {
+  font-size: 11.5px;
+  padding: 8px 13px;
+  border-radius: var(--r-md);
+  max-width: 88%;
+  line-height: 1.5;
+  animation: msgIn 0.3s ease both;
+}
+.chat-msg.user {
+  background: var(--accent-glow);
+  border: 1px solid rgba(79,142,247,0.25);
+  align-self: flex-end;
+  color: var(--text-pri);
+}
+.chat-msg.ai {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+  color: var(--text-pri);
+}
+
+.chat-row { display: flex; gap: 8px; align-items: flex-end; }
+
+.chat-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-md);
+  color: var(--text-pri);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  padding: 10px 14px;
+  resize: none;
+  min-height: 40px;
+  max-height: 90px;
+  outline: none;
+  transition: border-color var(--t-fast);
+  line-height: 1.45;
+}
+.chat-input:focus { border-color: var(--accent-pri); box-shadow: 0 0 0 3px var(--accent-glow); }
+.chat-input::placeholder { color: var(--text-dim); }
+
+.send-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-acc);
+  border: none;
+  border-radius: var(--r-md);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--t-fast);
+  box-shadow: var(--shadow-btn);
+}
+.send-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+.send-btn:active { transform: scale(0.96); }
+
+
+/* ============================================================
+   UPLOAD PROGRESS MODAL (Image 4 reference)
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-med);
+}
+.modal-overlay.visible { opacity: 1; pointer-events: all; }
+
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl);
+  padding: 28px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  animation: modalPop 0.35s var(--t-slow) both;
+  transform: translateY(20px);
+  transition: transform var(--t-med);
+}
+.modal-overlay.visible .modal-card { transform: translateY(0); }
+
+@keyframes modalPop { from{transform:translateY(24px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* Uploading state */
+.modal-upload-state .modal-icon-ring {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #0055ff, #00aaff);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 0 24px rgba(0,170,255,0.3);
+}
+.modal-headline { font-size: 18px; font-weight: 700; color: var(--text-pri); margin-bottom: 6px; }
+.modal-sub { font-size: 13px; color: var(--text-sec); margin-bottom: 20px; line-height: 1.5; }
+
+.progress-row { display: flex; align-items: center; gap: 12px; }
+.progress-track {
+  flex: 1;
+  height: 7px;
+  background: var(--bg-card2);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0055ff, #00aaff);
+  border-radius: var(--r-full);
+  width: 0%;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 10px rgba(0,170,255,0.5);
+}
+.progress-pct { font-size: 12px; font-weight: 600; color: var(--accent-cyan); font-family: var(--font-mono); min-width: 36px; text-align: right; }
+.modal-cancel-btn {
+  margin-top: 16px;
+  font-size: 12px;
+  padding: 7px 18px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-md);
+  color: var(--text-sec);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all var(--t-fast);
+}
+.modal-cancel-btn:hover { border-color: var(--accent-red); color: var(--accent-red); }
+
+/* Success modal */
+.modal-success-state { display: none; }
+.modal-success-state.show { display: block; }
+.modal-upload-state.hide { display: none; }
+
+.success-ring {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 0 24px rgba(16,185,129,0.35);
+}
+
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+.modal-action-btn {
+  flex: 1;
+  padding: 9px;
+  border-radius: var(--r-md);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all var(--t-fast);
+  border: 1px solid var(--border2);
+  background: var(--bg-card2);
+  color: var(--text-sec);
+}
+.modal-action-btn:hover { border-color: var(--accent-pri); color: var(--accent-pri); }
+.modal-action-btn.primary {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  border: none;
+  color: white;
+}
+.modal-action-btn.primary:hover { filter: brightness(1.08); }
+
+
+/* ============================================================
+   INSIGHTS TAB – Chart Studio
+   ============================================================ */
+.insights-view {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+.insights-view.active { display: flex; }
+
+.data-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+.data-view.hidden { display: none; }
+
+.insights-header {
+  padding: 14px 20px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.insights-title { font-size: 14px; font-weight: 700; color: var(--text-pri); margin-bottom: 3px; }
+.insights-sub { font-size: 11px; color: var(--text-sec); }
+
+.chart-gallery {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.chart-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 40px;
+}
+.chart-empty-icon { font-size: 48px; opacity: 0.35; }
+.chart-empty-title { font-size: 15px; font-weight: 600; color: var(--text-sec); }
+.chart-empty-sub { font-size: 12px; color: var(--text-dim); max-width: 360px; line-height: 1.6; }
+
+.chart-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  animation: slideDown 0.4s ease both;
+  box-shadow: var(--shadow-card);
+}
+.chart-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card2);
+  gap: 10px;
+}
+.chart-card-meta { flex: 1; }
+.chart-card-title { font-size: 12px; font-weight: 700; color: var(--text-pri); }
+.chart-card-desc { font-size: 10px; color: var(--text-sec); margin-top: 2px; }
+.chart-card-prompt {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  background: var(--accent-glow);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 3px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  flex-shrink: 0;
+}
+.chart-img { width: 100%; display: block; }
+
+.chart-bar {
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-sec);
+  font-size: 12px;
+  animation: slideDown 0.3s ease both;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent-pri);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .left-panel { height: auto; max-height: 320px; }
+  .header-center { display: none; }
+  .main-area { height: auto; }
+  .landing-headline { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+  .header { padding: 0 14px; }
+  .logo-text { display: none; }
+  .stat-chips { display: none; }
+}
 </style>
 </head>
+
 <body>
 
-<div class="header">
-  <div class="logo">
-    <div class="logo-icon">⚡</div>
-    DataForge<span style="color:var(--accent3)">.ai</span> (Full Stack)
+<!-- ========================================================
+     NAVBAR
+     ======================================================== -->
+<header class="header">
+  <a class="logo" href="#">
+    <div class="logo-mark">⚡</div>
+    <div class="logo-text">DataForge<em>.ai</em></div>
+  </a>
+
+  <div class="header-center">
+    <div class="nav-pills">
+      <button class="nav-pill active" id="tabData" onclick="switchTab('data')">📊 Data</button>
+      <button class="nav-pill disabled" id="tabTransform" title="Advanced transformations coming soon!">
+        ⚙️ Transform
+        <span class="soon-badge">Soon</span>
+      </button>
+      <button class="nav-pill" id="tabInsights" onclick="switchTab('insights')">🔍 Insights</button>
+    </div>
   </div>
+
   <div class="header-right">
-    <div class="status-badge"><div class="status-dot" id="statusDot"></div><span id="statusText">Ready</span></div>
-    <a class="btn-export" id="exportBtn" target="_blank" href="#">↓ Export CSV</a>
+    <div class="status-badge">
+      <div class="status-dot pulsing" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+    </div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+    <a class="btn-export" id="exportBtn" href="#" target="_blank">⬇ Export CSV</a>
+  </div>
+</header>
+
+
+<!-- ========================================================
+     UPLOAD PROGRESS MODAL
+     ======================================================== -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal-card">
+
+    <!-- Uploading State -->
+    <div class="modal-upload-state" id="modalUploading">
+      <div class="modal-icon-ring">⬆️</div>
+      <div class="modal-headline">Just a minute…</div>
+      <div class="modal-sub">Your file is uploading right now. Give us a second to finish your upload.</div>
+      <div class="progress-row">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-pct" id="progressPct">0%</div>
+      </div>
+      <button class="modal-cancel-btn" onclick="cancelUpload()">Cancel</button>
+    </div>
+
+    <!-- Success State -->
+    <div class="modal-success-state" id="modalSuccess">
+      <div class="success-ring">✅</div>
+      <div class="modal-headline">Your file was uploaded!</div>
+      <div class="modal-sub" id="successMsg">Your file was successfully processed. You can now explore and transform your data.</div>
+      <div class="modal-actions">
+        <button class="modal-action-btn" onclick="closeModal()">Close</button>
+        <button class="modal-action-btn primary" onclick="closeModal()">View Data →</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
+
+<!-- ========================================================
+     APP LAYOUT
+     ======================================================== -->
 <div class="app-layout">
-  <div class="left-panel">
+
+  <!-- ===== LEFT SIDEBAR ===== -->
+  <aside class="left-panel">
+
+    <!-- Upload Zone -->
     <div class="upload-section">
       <div class="section-label">Data Source</div>
-      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-        <div class="upload-icon">📂</div>
+      <div class="upload-zone" id="uploadZone"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="e=>{e.preventDefault();this.classList.add('drag-over')}"
+           ondragleave="e=>{this.classList.remove('drag-over')}"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon-wrap">📂</div>
         <div class="upload-title">Drop your data file</div>
-        <div class="upload-sub">CSV · XLSX · JSON</div>
+        <div class="upload-sub">CSV · XLSX · JSON — up to 50MB</div>
       </div>
       <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json" onchange="handleFile(event)">
-      <div class="file-info" id="fileInfo">
-        <div class="file-details">
-          <div class="file-name" id="fileName">—</div>
-        </div>
-      </div>
-    </div>
-    <div style="padding:10px 14px 4px;"><div class="section-label">AI Recommendations</div></div>
-    <div class="ai-section" id="aiSection">
-      <div class="empty-state" id="emptyRecs">Upload to get recommendations</div>
-    </div>
-    <button class="analyse-btn" id="analyseBtn" disabled onclick="analyseData()">🔍 Analyse Data</button>
-  </div>
 
-  <div class="main-area">
-    <div class="preview-area">
-      <div class="preview-header">
-        <div class="preview-title">📊 Data Preview</div>
-        <div class="preview-stats" id="previewStats"></div>
+      <div class="file-strip" id="fileStrip">
+        <div class="file-strip-icon">📄</div>
+        <div class="file-strip-info">
+          <div class="file-strip-name" id="fileStripName">—</div>
+          <div class="file-strip-size" id="fileStripSize">—</div>
+        </div>
+        <button class="file-strip-remove" onclick="clearFile()" title="Remove file">✕</button>
       </div>
-      <div class="table-wrapper">
-        <div id="tableContainer">
-          <div class="empty-table"><div class="empty-table-icon">🗂️</div><h3>No data loaded</h3></div>
+    </div>
+
+    <!-- AI Recommendations -->
+    <div class="ai-panel">
+      <div class="ai-panel-header">
+        <div class="section-label">AI Recommendations</div>
+      </div>
+      <div class="ai-recs-list" id="recsList">
+        <div class="ai-empty" id="recsEmpty">
+          <div class="ai-empty-icon">🤖</div>
+          <div class="ai-empty-text">Upload a dataset and click Analyse<br>to get AI-powered recommendations</div>
         </div>
       </div>
     </div>
-    <div class="chat-area">
-      <div class="suggestion-chips">
-        <button class="chip" onclick="useChip('remove duplicates')">Remove duplicates</button>
-        <button class="chip" onclick="useChip('fill nulls on Price with 0')">Fill nulls</button>
-        <button class="chip" onclick="useChip('trim whitespace from columns')">Trim whitespace</button>
+
+    <!-- Analyse Btn -->
+    <button class="analyse-btn" id="analyseBtn" disabled onclick="analyseData()">
+      🔍 Analyse Data
+    </button>
+
+  </aside>
+
+
+  <!-- ===== MAIN CONTENT AREA ===== -->
+  <main class="main-area">
+
+    <!-- ====== DATA TAB ====== -->
+    <div class="data-view" id="dataView">
+      <div class="preview-header" id="previewHeader" style="display:none">
+        <div class="preview-title-wrap">
+          <div class="preview-dot" id="previewDot"></div>
+          <div class="preview-title">📊 Data Preview</div>
+        </div>
+        <div class="stat-chips" id="statChips"></div>
       </div>
-      <div class="chat-history" id="chatHistory"></div>
-      <div class="chat-input-row">
-        <textarea class="chat-input" id="chatInput" placeholder="Command to transform dataset... e.g. 'remove duplicates'"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendChat()">↑</button>
+      <div class="table-section">
+        <div class="landing-hero" id="landingHero">
+          <div class="landing-headline">Intelligent Data<br>Preprocessing Agent</div>
+          <div class="landing-sub">Upload a CSV, Excel, or JSON file and let AI analyse, clean, and transform your data using natural language commands.</div>
+          <div class="landing-pills">
+            <div class="landing-pill"><span>✨</span> AI-Powered Analysis</div>
+            <div class="landing-pill"><span>🔧</span> NLP Transformations</div>
+            <div class="landing-pill"><span>📈</span> Instant Insights</div>
+            <div class="landing-pill"><span>🛡️</span> Safe &amp; Non-Destructive</div>
+          </div>
+        </div>
+        <div class="table-scroll" id="tableWrapper" style="display:none">
+          <table class="data-table" id="dataTable"></table>
+        </div>
       </div>
-    </div>
-  </div>
+      <div class="chat-bar">
+        <div class="suggestion-chips">
+          <button class="s-chip" onclick="useChip('Remove duplicate rows')">🗑 Remove duplicates</button>
+          <button class="s-chip" onclick="useChip('Fill all null values with 0')">🩹 Fill nulls</button>
+          <button class="s-chip" onclick="useChip('Trim whitespace from all string columns')">✂️ Trim whitespace</button>
+          <button class="s-chip" onclick="useChip('Convert all text columns to lowercase')">🔡 To lowercase</button>
+        </div>
+        <div class="chat-history" id="chatHistory"></div>
+        <div class="chat-row">
+          <textarea class="chat-input" id="chatInput"
+                    placeholder="Ask AI to transform data… e.g. 'Multiply Price by 1.1 where Category is Electronics'"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+                    rows="1"></textarea>
+          <button class="send-btn" onclick="sendChat()">↑</button>
+        </div>
+      </div>
+    </div><!-- /data-view -->
+
+    <!-- ====== INSIGHTS TAB ====== -->
+    <div class="insights-view" id="insightsView">
+      <div class="insights-header">
+        <div class="insights-title">📊 Chart Studio</div>
+        <div class="insights-sub">Describe the chart you want in plain English — AI will generate it instantly from your data.</div>
+      </div>
+      <div class="chart-gallery" id="chartGallery">
+        <div class="chart-empty" id="chartEmpty">
+          <div class="chart-empty-icon">📈</div>
+          <div class="chart-empty-title">No charts yet</div>
+          <div class="chart-empty-sub">Upload a dataset then type a prompt like<br><em>"Bar chart of top 10 products by revenue"</em><br>to generate your first visualization.</div>
+        </div>
+      </div>
+      <div class="chart-bar">
+        <div class="chart-chips">
+          <button class="s-chip" onclick="useChart('Bar chart of top 10 rows by first numeric column')">📊 Bar</button>
+          <button class="s-chip" onclick="useChart('Line chart of all numeric columns over index')">📈 Line</button>
+          <button class="s-chip" onclick="useChart('Scatter plot of first two numeric columns')">🔵 Scatter</button>
+          <button class="s-chip" onclick="useChart('Pie chart showing top 8 category distribution')">🥧 Pie</button>
+          <button class="s-chip" onclick="useChart('Histogram of first numeric column')">📉 Histogram</button>
+          <button class="s-chip" onclick="useChart('Box plot of all numeric columns')">📦 Box plot</button>
+          <button class="s-chip" onclick="useChart('Area chart showing trends for all numeric columns')">🌊 Area</button>
+        </div>
+        <div class="chat-row">
+          <textarea class="chat-input" id="chartInput"
+                    placeholder="Describe your chart… e.g. 'Bar chart of Wind_Speed vs Pressure for top 20 rows'"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChart()}"
+                    rows="1"></textarea>
+          <button class="send-btn" onclick="sendChart()">↑</button>
+        </div>
+      </div>
+    </div><!-- /insights-view -->
+
+  </main>
 </div>
 
+
+<!-- ========================================================
+     JAVASCRIPT
+     ======================================================== -->
 <script>
-const API_URL = "";
+/* -------- API BASE -------- */
+const API_URL = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : "";
+
 let activeFileId = null;
+let isDark = true;
 
+/* -------- THEME TOGGLE -------- */
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+}
+
+/* -------- TAB SWITCHER -------- */
+function switchTab(tab) {
+  if (tab === 'transform') return; // Feature coming soon
+  
+  ['data','transform','insights'].forEach(t => {
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  document.getElementById('dataView').classList.toggle('hidden', tab === 'insights');
+  document.getElementById('insightsView').classList.toggle('active', tab === 'insights');
+}
+
+/* -------- STATUS -------- */
 function setStatus(text, color) {
-    document.getElementById('statusText').innerText = text;
-    document.getElementById('statusDot').style.background = `var(--${color})`;
+  const dot = document.getElementById('statusDot');
+  document.getElementById('statusText').textContent = text;
+  const map = { green: 'var(--accent-green)', amber: 'var(--accent-amber)', red: 'var(--accent-red)', cyan: 'var(--accent-cyan)' };
+  dot.style.background = map[color] || map.green;
+  dot.style.boxShadow = `0 0 6px ${map[color] || map.green}`;
+  dot.classList.toggle('pulsing', color === 'amber');
 }
 
-async function handleFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+/* -------- MODAL HELPERS -------- */
+function showUploadModal() {
+  const m = document.getElementById('uploadModal');
+  document.getElementById('modalUploading').classList.remove('hide');
+  document.getElementById('modalSuccess').classList.remove('show');
+  m.classList.add('visible');
+  animateProgress();
+}
 
-    setStatus("Uploading...", "amber");
-    const formData = new FormData();
-    formData.append("file", file);
+function showSuccessModal(filename) {
+  document.getElementById('modalUploading').classList.add('hide');
+  const s = document.getElementById('modalSuccess');
+  s.classList.add('show');
+  document.getElementById('successMsg').textContent = `"${filename}" was processed successfully. You can now explore and transform your data.`;
+}
 
-    try {
-        const res = await fetch(`${API_URL}/upload`, { method: "POST", body: formData });
-        const data = await res.json();
-        
-        if (res.ok) {
-            activeFileId = data.file_id;
-            document.getElementById('fileName').innerText = data.filename;
-            document.getElementById('fileInfo').classList.add('show');
-            document.getElementById('analyseBtn').disabled = false;
-            document.getElementById('exportBtn').classList.add('active');
-            document.getElementById('exportBtn').href = `${API_URL}/export/${activeFileId}`;
-            renderPreview(data.preview);
-            addMsg('ai', `Loaded **${data.filename}**. Processing via Pandas connection successful.`);
-            setStatus("Ready", "green");
-        } else {
-            addMsg('user', `Error loading file: ${data.detail}`);
-            setStatus("Error", "red");
-        }
-    } catch(err) {
-        addMsg('user', `Server error: ${err.message}. Is backend running?`);
-        setStatus("Error", "red");
+function closeModal() {
+  document.getElementById('uploadModal').classList.remove('visible');
+}
+
+function cancelUpload() { closeModal(); }
+
+let progressInterval = null;
+function animateProgress() {
+  let p = 0;
+  clearInterval(progressInterval);
+  progressInterval = setInterval(() => {
+    p = Math.min(p + Math.random() * 18, 85);
+    setProgress(Math.round(p));
+    if (p >= 85) clearInterval(progressInterval);
+  }, 220);
+}
+
+function setProgress(pct) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+/* -------- DRAG & DROP -------- */
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) uploadFile(file);
+}
+
+/* -------- FILE INPUT -------- */
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) uploadFile(file);
+}
+
+function clearFile() {
+  activeFileId = null;
+  document.getElementById('fileStrip').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+  document.getElementById('analyseBtn').disabled = true;
+  document.getElementById('exportBtn').classList.remove('enabled');
+  document.getElementById('exportBtn').href = '#';
+  document.getElementById('landingHero').style.display = '';
+  document.getElementById('tableWrapper').style.display = 'none';
+  document.getElementById('previewHeader').style.display = 'none';
+  document.getElementById('recsList').innerHTML = `<div class="ai-empty" id="recsEmpty">
+    <div class="ai-empty-icon">🤖</div>
+    <div class="ai-empty-text">Upload a dataset and click Analyse<br>to get AI-powered recommendations</div>
+  </div>`;
+  setStatus('Ready', 'green');
+}
+
+async function uploadFile(file) {
+  showUploadModal();
+  setStatus('Uploading…', 'amber');
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+    const data = await res.json();
+
+    clearInterval(progressInterval);
+    setProgress(100);
+
+    if (res.ok) {
+      activeFileId = data.file_id;
+      setTimeout(() => {
+        showSuccessModal(data.filename);
+        // Populate sidebar
+        document.getElementById('fileStripName').textContent = data.filename;
+        const kb = (file.size / 1024).toFixed(1);
+        document.getElementById('fileStripSize').textContent = `${kb} KB · ${data.preview.rows} rows · ${data.preview.cols} cols`;
+        document.getElementById('fileStrip').classList.add('show');
+        document.getElementById('analyseBtn').disabled = false;
+        document.getElementById('exportBtn').classList.add('enabled');
+        document.getElementById('exportBtn').href = `${API_URL}/export/${activeFileId}`;
+        renderTable(data.preview);
+        addMsg('ai', `✅ Loaded <strong>${data.filename}</strong> — ${data.preview.rows} rows × ${data.preview.cols} columns. Ask me anything or click <em>Analyse Data</em>.`);
+        setStatus('Ready', 'green');
+      }, 600);
+    } else {
+      closeModal();
+      addMsg('ai', `❌ Upload failed: ${data.detail}`);
+      setStatus('Error', 'red');
     }
+  } catch (err) {
+    clearInterval(progressInterval);
+    closeModal();
+    addMsg('ai', `⚠️ Server error: ${err.message}. Is the backend running?`);
+    setStatus('Error', 'red');
+  }
 }
 
-function renderPreview(preview) {
-    document.getElementById('previewStats').innerHTML = `
-        <div class="stat-pill"><span>${preview.rows}</span> rows</div>
-        <div class="stat-pill"><span>${preview.cols}</span> cols</div>
-        <div class="stat-pill"><span style="color:var(--amber)">${preview.nulls}</span> nulls</div>
-        <div class="stat-pill"><span style="color:var(--red)">${preview.duplicates}</span> dups</div>
-    `;
+/* -------- RENDER TABLE -------- */
+function renderTable(preview) {
+  document.getElementById('landingHero').style.display = 'none';
+  document.getElementById('tableWrapper').style.display = '';
+  document.getElementById('previewHeader').style.display = '';
 
-    if (!preview.data || preview.data.length === 0) return;
+  // Stats
+  const dupVal = preview.duplicates;
+  const dupClass = (typeof dupVal === 'number' && dupVal > 0) ? 'err' : '';
+  
+  document.getElementById('statChips').innerHTML = `
+    <div class="stat-chip"><span class="val">${preview.rows}</span> rows</div>
+    <div class="stat-chip"><span class="val">${preview.cols}</span> cols</div>
+    <div class="stat-chip"><span class="val ${preview.nulls > 0 ? 'warn' : ''}">${preview.nulls}</span> nulls</div>
+    <div class="stat-chip"><span class="val ${dupClass}">${dupVal}</span> dups</div>
+  `;
 
-    let html = '<table class="data-table"><thead><tr>';
-    preview.columns.forEach(col => { html += `<th>${col} <span style="font-size:8px;color:gray">${preview.col_types[col]}</span></th>`; });
-    html += '</tr></thead><tbody>';
-    
-    preview.data.forEach(row => {
-        html += '<tr>';
-        preview.columns.forEach(col => {
-            const v = row[col];
-            if (v === null || v === undefined) {
-                html += `<td class="null-val">null</td>`;
-            } else {
-                html += `<td>${v}</td>`;
-            }
-        });
-        html += '</tr>';
+  if (!preview.data || preview.data.length === 0) return;
+
+  const table = document.getElementById('dataTable');
+  let thead = '<thead><tr>';
+  preview.columns.forEach(col => {
+    thead += `<th>${col}<span class="col-type">${preview.col_types[col]}</span></th>`;
+  });
+  thead += '</tr></thead>';
+
+  let tbody = '<tbody>';
+  preview.data.forEach(row => {
+    tbody += '<tr>';
+    preview.columns.forEach(col => {
+      const v = row[col];
+      if (v === null || v === undefined) tbody += '<td class="null-val">null</td>';
+      else tbody += `<td title="${String(v).replace(/"/g,'&quot;')}">${v}</td>`;
     });
-    html += '</tbody></table>';
-    document.getElementById('tableContainer').innerHTML = html;
+    tbody += '</tr>';
+  });
+  tbody += '</tbody>';
+  table.innerHTML = thead + tbody;
 }
 
+/* -------- ANALYSE -------- */
 async function analyseData() {
-    if (!activeFileId) return;
-    setStatus("Analysing...", "amber");
-    document.getElementById('aiSection').innerHTML = `<div class="empty-state">Running AI Analysis remotely...</div>`;
-    
-    try {
-        const res = await fetch(`${API_URL}/analyze/${activeFileId}`);
-        const data = await res.json();
-        
-        if (data.recommendations && data.recommendations.length > 0) {
-            let html = '';
-            data.recommendations.forEach(rec => {
-                html += `
-                <div class="rec-card">
-                  <div class="rec-header">
-                    <span>${rec.icon}</span> <span class="rec-title">${rec.title}</span>
-                  </div>
-                  <div class="rec-desc">${rec.description}</div>
-                  <button class="rec-apply-btn" onclick="useChip('${rec.action}')">Apply: ${rec.action}</button>
-                </div>`;
-            });
-            document.getElementById('aiSection').innerHTML = html;
-        } else {
-            document.getElementById('aiSection').innerHTML = `<div class="empty-state">No recommendations found or API key not set in backend.</div>`;
-        }
-    } catch(err) {
-        document.getElementById('aiSection').innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
+  if (!activeFileId) return;
+  setStatus('Analysing…', 'amber');
+  document.getElementById('recsList').innerHTML = `<div class="ai-empty"><div class="ai-empty-icon">⏳</div><div class="ai-empty-text">Running AI analysis…</div></div>`;
+
+  try {
+    const res = await fetch(`${API_URL}/analyze/${activeFileId}`);
+    const data = await res.json();
+
+    if (data.recommendations && data.recommendations.length > 0) {
+      let html = '';
+      data.recommendations.forEach((rec, i) => {
+        const sev = rec.severity || 'medium';
+        html += `
+          <div class="rec-card severity-${sev}" style="animation-delay:${i * 0.06}s">
+            <div class="rec-hd">
+              <span class="rec-icon">${rec.icon || '💡'}</span>
+              <span class="rec-title">${rec.title}</span>
+              <span class="rec-severity">${sev}</span>
+            </div>
+            <div class="rec-desc">${rec.description}</div>
+            <button class="rec-action-btn" onclick="useChip(\`${rec.action.replace(/`/g,"'")}\`)">
+              Apply: ${rec.action}
+            </button>
+          </div>`;
+      });
+      document.getElementById('recsList').innerHTML = html;
+    } else {
+      document.getElementById('recsList').innerHTML = `<div class="ai-empty"><div class="ai-empty-icon">✅</div><div class="ai-empty-text">No issues found — data looks clean!</div></div>`;
     }
-    setStatus("Ready", "green");
+
+    // Refresh stats (since analysis now includes full expensive scans)
+    if (data.preview) {
+      renderTable(data.preview);
+    }
+    setStatus('Ready', 'green');
+  } catch (err) {
+    document.getElementById('recsList').innerHTML = `<div class="ai-empty"><div class="ai-empty-icon">❌</div><div class="ai-empty-text">${err.message}</div></div>`;
+    setStatus('Error', 'red');
+  }
 }
 
-function useChip(cmd) { document.getElementById('chatInput').value = cmd; sendChat(); }
+/* -------- CHAT -------- */
+function useChip(cmd) {
+  document.getElementById('chatInput').value = cmd;
+  sendChat();
+}
 
 async function sendChat() {
-    const input = document.getElementById('chatInput');
-    const msg = input.value.trim();
-    if (!msg || !activeFileId) return;
-    
-    input.value = '';
-    addMsg('user', msg);
-    setStatus("Processing via Pandas...", "amber");
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || !activeFileId) return;
 
-    try {
-        const res = await fetch(`${API_URL}/transform`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({file_id: activeFileId, command: msg})
-        });
-        const data = await res.json();
-        
-        if (res.ok) {
-            addMsg('ai', data.message);
-            renderPreview(data.preview);
-            document.getElementById('exportBtn').href = `${API_URL}/export/${activeFileId}?salt=${Date.now()}`;
-        } else {
-            addMsg('ai', `Error: ${data.detail}`);
-        }
-    } catch(err) {
-        addMsg('ai', `Failed: ${err.message}`);
+  input.value = '';
+  input.style.height = 'auto';
+  addMsg('user', msg);
+  setStatus('Processing…', 'amber');
+
+  try {
+    const res = await fetch(`${API_URL}/transform`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file_id: activeFileId, command: msg })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      addMsg('ai', data.message);
+      renderTable(data.preview);
+      document.getElementById('exportBtn').href = `${API_URL}/export/${activeFileId}?t=${Date.now()}`;
+    } else {
+      addMsg('ai', `❌ ${data.detail}`);
     }
-    setStatus("Ready", "green");
+  } catch (err) {
+    addMsg('ai', `⚠️ ${err.message}`);
+  }
+  setStatus('Ready', 'green');
 }
 
 function addMsg(role, text) {
@@ -316,6 +1514,97 @@ function addMsg(role, text) {
   h.appendChild(d);
   h.scrollTop = h.scrollHeight;
 }
+
+/* -------- CHART -------- */
+function useChart(cmd) {
+  const input = document.getElementById('chartInput');
+  if (input) { input.value = cmd; sendChart(); }
+}
+
+async function sendChart() {
+  if (!activeFileId) {
+    alert('Please upload a dataset first.');
+    return;
+  }
+  const input = document.getElementById('chartInput');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Remove empty state
+  const empty = document.getElementById('chartEmpty');
+  if (empty) empty.remove();
+
+  // Show loading indicator
+  const gallery = document.getElementById('chartGallery');
+  const loaderId = 'loader_' + Date.now();
+  const loader = document.createElement('div');
+  loader.className = 'chart-loading';
+  loader.id = loaderId;
+  loader.innerHTML = `<div class="spinner"></div><span>Generating chart: <em>${prompt}</em></span>`;
+  gallery.appendChild(loader);
+  gallery.scrollTop = gallery.scrollHeight;
+  setStatus('Generating chart…', 'amber');
+
+  try {
+    const res = await fetch(`${API_URL}/chart`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file_id: activeFileId, command: prompt })
+    });
+    const data = await res.json();
+
+    // Remove loader
+    document.getElementById(loaderId)?.remove();
+
+    if (res.ok && data.image_b64) {
+      const card = document.createElement('div');
+      card.className = 'chart-card';
+      card.innerHTML = `
+        <div class="chart-card-header">
+          <div class="chart-card-meta">
+            <div class="chart-card-title">${data.title}</div>
+            <div class="chart-card-desc">${data.description || ''}</div>
+          </div>
+          <div class="chart-card-prompt" title="${prompt}">${prompt}</div>
+        </div>
+        <img class="chart-img" src="data:image/png;base64,${data.image_b64}" alt="${data.title}">
+      `;
+      gallery.appendChild(card);
+      gallery.scrollTop = gallery.scrollHeight;
+    } else {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'chart-loading';
+      errDiv.innerHTML = `<span>❌ ${data.detail || 'Chart generation failed.'}</span>`;
+      gallery.appendChild(errDiv);
+    }
+    setStatus('Ready', 'green');
+  } catch (err) {
+    document.getElementById(loaderId)?.remove();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'chart-loading';
+    errDiv.innerHTML = `<span>⚠️ ${err.message}</span>`;
+    gallery.appendChild(errDiv);
+    setStatus('Error', 'red');
+  }
+}
+
+/* -------- Auto-grow textareas -------- */
+document.getElementById('chatInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+});
+document.getElementById('chartInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+});
+
+/* -------- Close modal on overlay click -------- */
+document.getElementById('uploadModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
 </script>
 </body>
 </html>

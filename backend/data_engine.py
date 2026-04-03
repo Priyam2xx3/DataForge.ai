@@ -8,11 +8,6 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-# Configure Gemini
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 def get_preview_stats(df: pd.DataFrame):
@@ -38,8 +33,12 @@ def get_preview_stats(df: pd.DataFrame):
 
 def analyze_dataset(df: pd.DataFrame):
     """Gives AI-powered recommendations for fixing the dataset."""
-    if not api_key:
+    load_dotenv(override=True)
+    current_key = os.getenv("GEMINI_API_KEY")
+    if not current_key:
         return [{"title": "API Key Missing", "description": "Configure GEMINI_API_KEY to see AI recommendations.", "severity": "medium", "icon": "⚠️", "action": "None"}]
+    else:
+        genai.configure(api_key=current_key)
 
     sample = df.head(5).to_dict(orient="records")
     stats = {
@@ -100,6 +99,11 @@ def apply_nlp_transformation(df: pd.DataFrame, command: str) -> tuple[pd.DataFra
     
     Return ONLY a single valid JSON object representing the operation. No markdown.
     """
+    
+    load_dotenv(override=True)
+    current_key = os.getenv("GEMINI_API_KEY")
+    if current_key:
+        genai.configure(api_key=current_key)
     
     try:
         response = model.generate_content(prompt)

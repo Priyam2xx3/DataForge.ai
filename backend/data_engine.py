@@ -10,9 +10,10 @@ import json
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+load_dotenv() # Load from .env if it exists, but don't override system envs
 
-model = genai.GenerativeModel('gemini-2.5-flash')
+# Note: Model is initialized inside functions or here to ensure configuration is handled correctly.
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 # ── Chart Theme Palette (matches UI dark theme) ──────────────
 DARK_BG  = "#0f0f12"
@@ -149,10 +150,9 @@ def generate_chart(df: pd.DataFrame, command: str) -> dict:
 
     # ── 2. Fallback to Gemini only if local parse failed ──────
     if spec is None:
-        load_dotenv(override=True)
         key = os.getenv("GEMINI_API_KEY")
         if not key:
-            return {"error": "GEMINI_API_KEY not set."}
+            return {"error": "GEMINI_API_KEY not set in environment."}
         genai.configure(api_key=key)
 
         prompt = f"""
@@ -310,10 +310,9 @@ def get_preview_stats(df: pd.DataFrame, include_expensive=True):
 
 def analyze_dataset(df: pd.DataFrame):
     """Gives AI-powered recommendations for fixing the dataset."""
-    load_dotenv(override=True)
     current_key = os.getenv("GEMINI_API_KEY")
     if not current_key:
-        return [{"title": "API Key Missing", "description": "Configure GEMINI_API_KEY to see AI recommendations.", "severity": "medium", "icon": "⚠️", "action": "None"}]
+        return [{"title": "API Key Missing", "description": "Configure GEMINI_API_KEY in your environment (e.g. Render Dashboard) to see AI recommendations.", "severity": "medium", "icon": "⚠️", "action": "None"}]
     else:
         genai.configure(api_key=current_key)
 
@@ -410,7 +409,6 @@ def apply_nlp_transformation(df: pd.DataFrame, command: str) -> tuple[pd.DataFra
     Return ONLY a single valid JSON object representing the operation. No markdown.
     """
     
-    load_dotenv(override=True)
     current_key = os.getenv("GEMINI_API_KEY")
     if current_key:
         genai.configure(api_key=current_key)
